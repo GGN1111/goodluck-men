@@ -183,6 +183,39 @@
       }
     },
     {
+      "id": "general-03-bagyo-warning",
+      "source_type": "text",
+      "text": "BABALA: Bagyong Crising papalapit pa sa bansa, inaasahang tumama sa susunod na 24 oras. Ihanda ang emergency kit at bantayan ang mga update mula sa PAGASA.",
+      "expected": {
+        "no_emergency": false,
+        "crisis_type": "GENERAL",
+        "bantay_state": "CAUTION",
+        "required_warning_codes": ["HOTLINE", "ZONE"]
+      }
+    },
+    {
+      "id": "general-04-bagyo-evac",
+      "source_type": "text",
+      "text": "BAGYO WARNING: Lumapit sa category 4 ang bagyong Crising. EVACUATE ngayon ang mga nasa coastal na lugar! Magtungo sa pinakamalapit na evacuation center.",
+      "expected": {
+        "no_emergency": false,
+        "crisis_type": "GENERAL",
+        "bantay_state": "ALERT",
+        "required_warning_codes": ["HOTLINE", "ZONE"]
+      }
+    },
+    {
+      "id": "security-04-school-shooter",
+      "source_type": "text",
+      "text": "school shooter inside of my school help!!! may baril gun",
+      "expected": {
+        "no_emergency": false,
+        "crisis_type": "SECURITY",
+        "bantay_state": "ALERT",
+        "required_warning_codes": ["ZONE", "HOTLINE"]
+      }
+    },
+    {
       "id": "jargon-01-feeder-river",
       "source_type": "text",
       "text": "Feeder 4 trip. Marikina 16.5m. Alarm 2. Zone 4 affected.",

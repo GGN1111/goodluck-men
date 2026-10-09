@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
@@ -12,6 +13,7 @@ import '../data/repositories/warning_repository.dart';
 import '../domain/analyze_advisory.dart';
 import '../inference/enrichment_pipeline.dart';
 import '../inference/fastpath_classifier.dart';
+import '../inference/inference_types.dart';
 import '../inference/llama_engine.dart';
 import '../inference/template_checklists.dart';
 import '../ingest/intake.dart';
@@ -134,17 +136,27 @@ class AppGraph {
   }
 
   /// Best-effort native engine load: missing GGUF (research R11) or a host
-  /// without llama.cpp resolves to null → skeleton-only analysis.
-  static Future<LlamaCppEngine?> _loadEngine() async {
+  /// without llama.cpp resolves to null → skeleton-only analysis. The engine
+  /// runs inference on a background isolate so the blocking llama.cpp FFI
+  /// calls never freeze the UI thread (ANR guard).
+  static Future<InferenceEngine?> _loadEngine() async {
     try {
       final dir = await getApplicationDocumentsDirectory();
       final modelPath = await LlamaCppEngine.ensureModelAsset(
         assetName: primaryModelAsset,
         destinationDir: p.join(dir.path, 'models'),
       );
-      if (modelPath == null) return null;
-      return LlamaCppEngine.tryCreate(modelPath: modelPath);
-    } catch (_) {
+      if (modelPath == null) {
+        debugPrint('AppGraph: engine disabled (model asset unavailable)');
+        return null;
+      }
+      final engine = await IsolateInferenceEngine.create(modelPath: modelPath);
+      if (engine == null) {
+        debugPrint('AppGraph: native libllama.so/shim unavailable');
+      }
+      return engine;
+    } catch (e) {
+      debugPrint('AppGraph: engine load failed: $e');
       return null;
     }
   }

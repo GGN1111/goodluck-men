@@ -1,15 +1,17 @@
-# bantay-json-v1.gbnf — llama.cpp grammar for contracts/bantay-analysis.schema.json
+# bantay-json-v1.gbnf - llama.cpp grammar for contracts/bantay-analysis.schema.json
 # Constrained decoding makes malformed JSON structurally impossible (research R3).
 # Fixed key order matches the contract; strings allow standard JSON escapes.
+# GBNF rules (llama.cpp grammars/README.md): alternation is "|", a rule may only
+# wrap lines inside "(...)", and rule names cannot contain "_" (only "-").
 
 root   ::= object
 
 object ::=
-  "{" ws "\"schema_version\"" ws ":" ws "\"1.0\"" ws ","
+  ( "{" ws "\"schema_version\"" ws ":" ws "\"1.0\"" ws ","
   ws "\"analysis_id\"" ws ":" ws string ws ","
   ws "\"source\"" ws ":" ws source ws ","
-  ws "\"crisis_type\"" ws ":" ws crisis_type ws ","
-  ws "\"bantay_state\"" ws ":" ws bantay_state ws ","
+  ws "\"crisis_type\"" ws ":" ws crisis-type ws ","
+  ws "\"bantay_state\"" ws ":" ws bantay-state ws ","
   ws "\"status\"" ws ":" ws status ws ","
   ws "\"location\"" ws ":" ws null-or-string ws ","
   ws "\"time_or_status\"" ws ":" ws null-or-string ws ","
@@ -17,37 +19,41 @@ object ::=
   ws "\"bantay_speech\"" ws ":" ws triplet ws ","
   ws "\"action_checklist\"" ws ":" ws steps ws ","
   ws "\"missing_warnings\"" ws ":" ws warnings ws ","
-  ws "\"model_notice\"" ws ":" ws null-or-string ws "}"
+  ws "\"model_notice\"" ws ":" ws null-or-string ws "}" )
 
-source  ::= "{" ws "\"type\"" ws ":" ws ("\"text\"" / "\"ocr\"") ws ","
-            ws "\"text\"" ws ":" ws string ws "}"
+source ::=
+  ( "{" ws "\"type\"" ws ":" ws ("\"text\"" | "\"ocr\"") ws ","
+  ws "\"text\"" ws ":" ws string ws "}" )
 
-crisis_type ::= "\"FLOOD\"" / "\"FIRE\"" / "\"SECURITY\"" / "\"BLACKOUT\"" / "\"GENERAL\""
-bantay_state ::= "\"ALERT\"" / "\"CAUTION\"" / "\"INFO\""
-status  ::= "\"skeleton\"" / "\"enriched\"" / "\"failed\""
-warning_code ::= "\"EVAC_CENTER\"" / "\"HOTLINE\"" / "\"ZONE\"" / "\"OTHER\""
+crisis-type ::= "\"FLOOD\"" | "\"FIRE\"" | "\"SECURITY\"" | "\"BLACKOUT\"" | "\"GENERAL\""
+bantay-state ::= "\"ALERT\"" | "\"CAUTION\"" | "\"INFO\""
+status  ::= "\"skeleton\"" | "\"enriched\"" | "\"failed\""
+warning-code ::= "\"EVAC_CENTER\"" | "\"HOTLINE\"" | "\"ZONE\"" | "\"OTHER\""
 
-triplet ::= "{" ws "\"en\"" ws ":" ws string ws ","
-               ws "\"tl\"" ws ":" ws string ws ","
-               ws "\"ceb\"" ws ":" ws string ws "}"
+triplet ::=
+  ( "{" ws "\"en\"" ws ":" ws string ws ","
+  ws "\"tl\"" ws ":" ws string ws ","
+  ws "\"ceb\"" ws ":" ws string ws "}" )
 
 steps   ::= "[" ws step (ws "," ws step)* ws "]"
-step    ::= "{" ws "\"id\"" ws ":" ws string ws ","
-                ws "\"priority\"" ws ":" ws int ws ","
-                ws "\"text\"" ws ":" ws triplet ws ","
-                ws "\"origin\"" ws ":" ws ("\"template\"" / "\"llm\"") ws ","
-                ws "\"state\"" ws ":" ws ("\"pending\"" / "\"done\"") ws "}"
+step    ::=
+  ( "{" ws "\"id\"" ws ":" ws string ws ","
+  ws "\"priority\"" ws ":" ws int ws ","
+  ws "\"text\"" ws ":" ws triplet ws ","
+  ws "\"origin\"" ws ":" ws ("\"template\"" | "\"llm\"") ws ","
+  ws "\"state\"" ws ":" ws ("\"pending\"" | "\"done\"") ws "}" )
 
 warnings ::= "[" ws warning (ws "," ws warning)* ws "]"
-warning ::= "{" ws "\"id\"" ws ":" ws string ws ","
-                ws "\"code\"" ws ":" ws warning_code ws ","
-                ws "\"text\"" ws ":" ws triplet ws ","
-                ws "\"origin\"" ws ":" ws ("\"fastpath\"" / "\"llm\"") ws "}"
+warning ::=
+  ( "{" ws "\"id\"" ws ":" ws string ws ","
+  ws "\"code\"" ws ":" ws warning-code ws ","
+  ws "\"text\"" ws ":" ws triplet ws ","
+  ws "\"origin\"" ws ":" ws ("\"fastpath\"" | "\"llm\"") ws "}" )
 
-null-or-string ::= "null" / string
+null-or-string ::= "null" | string
 
 int     ::= [1-9] [0-9]*
 string  ::= "\"" char* "\""
-char    ::= [^"\\] / escape
-escape  ::= "\\" ["\\/bfnrt] / "\\u" [0-9a-fA-F] [0-9a-fA-F] [0-9a-fA-F] [0-9a-fA-F]
+char    ::= [^"\\] | escape
+escape  ::= "\\" ["\\/bfnrt] | "\\u" [0-9a-fA-F] [0-9a-fA-F] [0-9a-fA-F] [0-9a-fA-F]
 ws      ::= [ \t\n\r]*

@@ -24,6 +24,22 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+
+        // llama.cpp native lib (libllama.so) — arm64 only (A53 is arm64-v8a).
+        // clear() first: `+=` would only add to the ABIs the Flutter Gradle
+        // plugin already registers (armeabi-v7a, x86_64, ...), still building
+        // 32-bit targets that hit AArch64-only intrinsics in ggml.
+        ndk {
+            abiFilters.clear()
+            abiFilters.add("arm64-v8a")
+        }
+    }
+
+    externalNativeBuild {
+        cmake {
+            path = file("src/main/cpp/CMakeLists.txt")
+            version = "3.22.1"
+        }
     }
 
     buildTypes {

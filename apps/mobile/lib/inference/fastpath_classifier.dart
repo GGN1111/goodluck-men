@@ -107,15 +107,40 @@ class FastPathClassifier {
       'pulis',
       'suspect',
       'security',
+    ], words: [
+      'shooter',
+      'shooting',
+      'gun',
+      'guns',
+      'baril',
+      'hostage',
+      'nagpaputok',
+      'terorista',
+      'terrorist',
+      'bomba',
+      'bomb',
     ])) {
       return CrisisType.security;
     }
+    // Typhoons, earthquakes, volcanic activity — spec constraint: new
+    // categories map to GENERAL until the taxonomy is extended.
     if (_any(t, const [
       'landslide',
       'relief',
       'babala',
       'paunawa',
       'first aid',
+      'storm surge',
+    ], words: [
+      'bagyo',
+      'bagyong',
+      'typhoon',
+      'lindol',
+      'earthquake',
+      'ashfall',
+      'bulkan',
+      'vulcan',
+      'vulkan',
     ])) {
       return CrisisType.general;
     }
@@ -145,16 +170,19 @@ class FastPathClassifier {
     // Explicit life-threat markers (imperative evacuation, active threat,
     // casualties). Plain evacuation mentions are deliberately NOT triggers —
     // "Wala pang iniaanunsyong evacuation" must stay CAUTION (corpus
-    // flood-03, nongov-01).
+    // flood-03, nongov-01). Phrase 'evacuate' is safe: "evacuation" does
+    // not contain it.
     if (_any(t, const [
       'lumikas',
       'ilikas',
+      'evacuate',
       'evacuation order',
       'mandatory evacuation',
       'flash flood',
       'alarm 2',
       'alarm 3',
       'kumakalat',
+      'nagpaputok',
     ], words: [
       'lockdown',
       'armad',
@@ -163,6 +191,9 @@ class FastPathClassifier {
       'likayi',
       'sunog',
       'apoy',
+      'shooter',
+      'shooting',
+      'hostage',
     ])) {
       return SeverityState.alert;
     }

@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart' show debugPrint;
+
 import '../domain/analysis_validator.dart';
 import 'bantay_prompt.dart';
 import 'inference_types.dart';
@@ -70,16 +72,19 @@ class EnrichmentPipeline {
         // Engine-level failure — retrying through the same engine will not
         // help; degrade per FR-014 with the specific code.
         lastCode = engineFailure ?? lastCode;
+        debugPrint('llm: enrichment abort attempt=$attempt code=$lastCode');
         return EnrichmentOutcome.failure(
           code: lastCode,
           notice: _noticeFor(lastCode),
         );
       }
+      debugPrint('llm: raw bytes=${raw.length} attempt=$attempt');
 
       final payload = decodeAnalysisPayload(raw);
       if (payload == null) {
         lastCode = 'grammar_violation';
         errors = ['output was not parseable JSON'];
+        debugPrint('llm: unparseable JSON attempt=$attempt raw=${raw.length}');
         continue;
       }
 
@@ -87,11 +92,15 @@ class EnrichmentPipeline {
           analysisId: analysisId, source: source);
       final result = validator.validate(payload);
       if (result.isValid) {
+        debugPrint('llm: enrichment VALID attempt=$attempt');
         return EnrichmentOutcome.success(payload: payload, validation: result);
       }
       lastCode = 'grammar_violation';
       errors = result.errors;
+      debugPrint('llm: validation errors attempt=$attempt ${result.errors.take(3)}');
     }
+
+    debugPrint('llm: enrichment exhausted both attempts code=$lastCode');
 
     return EnrichmentOutcome.failure(
       code: lastCode,

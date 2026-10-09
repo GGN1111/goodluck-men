@@ -32,6 +32,8 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  # Directory assets: everything under these dirs is bundled (incl. any
+  # GGUF placed into assets/models/ per README placement contract).
   assets:
     - assets/models/
     - assets/bantay/
