@@ -53,8 +53,17 @@ class SignalReadyDatabase {
 
   /// Creates any missing v1 table/index idempotently and reseeds guides.
   /// Safe to run on every open; never drops or alters existing data.
+  ///
+  /// The DDL runs as a [Batch] of single statements: `sqflite_android`'s
+  /// `execute()` only runs the first statement of a multi-statement string,
+  /// so a lone `execute()` here created just `incidents` on-device and the
+  /// settings seed then crashed with "no such table: settings".
   static Future<void> _healSchema(Database db) async {
-    await db.execute(migrationV1IdempotentSql);
+    final batch = db.batch();
+    for (final statement in migrationV1IdempotentStatements) {
+      batch.execute(statement);
+    }
+    await batch.commit(noResult: true);
     await db.execute(settingsSeedSql);
     await seedGuidesIfEmpty(db);
   }

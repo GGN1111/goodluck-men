@@ -105,15 +105,22 @@ INSERT INTO settings (id, language)
   SELECT 1, 'tl' WHERE NOT EXISTS (SELECT 1 FROM settings WHERE id = 1);
 ''';
 
-/// Idempotent v1 DDL (CREATE TABLE IF NOT EXISTS / CREATE INDEX IF NOT
-/// EXISTS) + default settings row. Used by [healSchema] to bring a stale or
-/// partially-created dev DB up to the full v1 shape without dropping data.
+/// Idempotent v1 DDL statements (CREATE TABLE IF NOT EXISTS / CREATE INDEX IF
+/// NOT EXISTS), one statement per element. Used by `_healSchema` to bring a
+/// stale or partially-created dev DB up to the full v1 shape without dropping
+/// data. The default settings row is seeded separately by [settingsSeedSql].
 ///
 /// This is the safety net for DBs created by builds whose schema predates a
 /// table that v1 now includes (e.g. the `guides` table): such files skip
 /// `onCreate`, so without healing, first open crashes with
 /// "no such table". Every statement here is safe to run repeatedly.
-const String migrationV1IdempotentSql = '''
+///
+/// NOTE: kept as a list (not one multi-statement string) because
+/// `sqflite_android.execute()` only runs the FIRST statement of a
+/// multi-statement string — a single `execute()` here silently created just
+/// `incidents` on-device and the settings seed then crashed startup.
+const List<String> migrationV1IdempotentStatements = [
+  '''
 CREATE TABLE IF NOT EXISTS incidents (
   id             INTEGER PRIMARY KEY AUTOINCREMENT,
   created_at     TEXT    NOT NULL,
@@ -135,8 +142,8 @@ CREATE TABLE IF NOT EXISTS incidents (
                    ('skeleton','enriched','failed')),
   model_notice   TEXT,
   analysis_id    TEXT
-);
-
+)''',
+  '''
 CREATE TABLE IF NOT EXISTS action_steps (
   id          INTEGER PRIMARY KEY AUTOINCREMENT,
   incident_id INTEGER NOT NULL REFERENCES incidents(id) ON DELETE CASCADE,
@@ -146,10 +153,11 @@ CREATE TABLE IF NOT EXISTS action_steps (
   text_ceb    TEXT    NOT NULL,
   state       TEXT    NOT NULL CHECK (state IN ('pending','done')),
   origin      TEXT    NOT NULL CHECK (origin IN ('template','llm'))
-);
+)''',
+  '''
 CREATE INDEX IF NOT EXISTS idx_steps_incident
-  ON action_steps(incident_id, priority);
-
+  ON action_steps(incident_id, priority)''',
+  '''
 CREATE TABLE IF NOT EXISTS missing_warnings (
   id          INTEGER PRIMARY KEY AUTOINCREMENT,
   incident_id INTEGER NOT NULL REFERENCES incidents(id) ON DELETE CASCADE,
@@ -159,10 +167,11 @@ CREATE TABLE IF NOT EXISTS missing_warnings (
   text_tl     TEXT    NOT NULL,
   text_ceb    TEXT    NOT NULL,
   origin      TEXT    NOT NULL CHECK (origin IN ('fastpath','llm'))
-);
+)''',
+  '''
 CREATE INDEX IF NOT EXISTS idx_warnings_incident
-  ON missing_warnings(incident_id);
-
+  ON missing_warnings(incident_id)''',
+  '''
 CREATE TABLE IF NOT EXISTS recheck_alarms (
   id              INTEGER PRIMARY KEY AUTOINCREMENT,
   incident_id     INTEGER NOT NULL REFERENCES incidents(id) ON DELETE CASCADE,
@@ -171,10 +180,11 @@ CREATE TABLE IF NOT EXISTS recheck_alarms (
   status          TEXT    NOT NULL CHECK (status IN
                     ('scheduled','fired','cancelled')),
   platform_handle TEXT
-);
+)''',
+  '''
 CREATE INDEX IF NOT EXISTS idx_alarms_status
-  ON recheck_alarms(status, fire_at);
-
+  ON recheck_alarms(status, fire_at)''',
+  '''
 CREATE TABLE IF NOT EXISTS guides (
   id          INTEGER PRIMARY KEY AUTOINCREMENT,
   slug        TEXT    NOT NULL UNIQUE,
@@ -186,16 +196,16 @@ CREATE TABLE IF NOT EXISTS guides (
   body_en     TEXT    NOT NULL,
   body_tl     TEXT    NOT NULL,
   body_ceb    TEXT    NOT NULL
-);
-
+)''',
+  '''
 CREATE TABLE IF NOT EXISTS household_profile (
   id               INTEGER PRIMARY KEY CHECK (id = 1),
   meeting_point    TEXT,
   evac_destination TEXT,
   notes            TEXT,
   updated_at       TEXT
-);
-
+)''',
+  '''
 CREATE TABLE IF NOT EXISTS settings (
   id                   INTEGER PRIMARY KEY CHECK (id = 1),
   language             TEXT NOT NULL DEFAULT 'tl'
@@ -204,5 +214,5 @@ CREATE TABLE IF NOT EXISTS settings (
   notifications_granted INTEGER NOT NULL DEFAULT 0,
   model_variant        TEXT NOT NULL DEFAULT 'primary'
                          CHECK (model_variant IN ('primary','fallback','missing'))
-);
-''';
+)''',
+];
