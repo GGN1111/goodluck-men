@@ -1,0 +1,140 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://signalready.local/contracts/bantay-analysis.schema.json",
+  "title": "BantayAnalysis",
+  "description": "Versioned contract between the on-device analysis pipeline (fast-path + LLM enrichment) and the UI/persistence layers. Output must always conform while grammar-constrained decoding is active (research R3).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "analysis_id",
+    "source",
+    "crisis_type",
+    "bantay_state",
+    "status",
+    "summary",
+    "bantay_speech",
+    "action_checklist",
+    "missing_warnings"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0",
+      "description": "Bump on breaking contract change; UI rejects unknown majors."
+    },
+    "analysis_id": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+      "description": "UUID v4 assigned at intake; becomes IncidentRecord id."
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "text"],
+      "properties": {
+        "type": { "enum": ["text", "ocr"] },
+        "text": { "type": "string", "minLength": 1, "maxLength": 20000 }
+      }
+    },
+    "crisis_type": { "enum": ["FLOOD", "FIRE", "SECURITY", "BLACKOUT", "GENERAL"] },
+    "bantay_state": { "enum": ["ALERT", "CAUTION", "INFO"] },
+    "status": {
+      "enum": ["skeleton", "enriched", "failed"],
+      "description": "skeleton = fast-path brief (rendered ≤2s); enriched = validated LLM output merged; failed = degraded brief retained after one repair retry."
+    },
+    "location": {
+      "type": ["string", "null"],
+      "description": "Only if present/extractable from source text; null when absent (FR-005 — never invented)."
+    },
+    "time_or_status": {
+      "type": ["string", "null"],
+      "description": "Same provenance rule as location."
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["en", "tl", "ceb"],
+      "properties": {
+        "en": { "type": "string", "minLength": 1 },
+        "tl": { "type": "string", "minLength": 1 },
+        "ceb": { "type": "string", "minLength": 1 }
+      },
+      "description": "Plain-language de-jargoned summary in all three languages, produced in one pass (FR-009, research R5)."
+    },
+    "bantay_speech": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["en", "tl", "ceb"],
+      "properties": {
+        "en": { "type": "string", "minLength": 1 },
+        "tl": { "type": "string", "minLength": 1 },
+        "ceb": { "type": "string", "minLength": 1 }
+      },
+      "description": "Guardian mascot speech bubbles."
+    },
+    "action_checklist": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 5,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "priority", "text", "origin", "state"],
+        "properties": {
+          "id": { "type": "string" },
+          "priority": { "type": "integer", "minimum": 1 },
+          "text": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["en", "tl", "ceb"],
+            "properties": {
+              "en": { "type": "string", "minLength": 1 },
+              "tl": { "type": "string", "minLength": 1 },
+              "ceb": { "type": "string", "minLength": 1 }
+            }
+          },
+          "origin": { "enum": ["template", "llm"] },
+          "state": { "enum": ["pending", "done"] }
+        }
+      },
+      "description": "Prioritized situation-specific steps (target 3, max 5); UI-checkable (FR-006)."
+    },
+    "missing_warnings": {
+      "type": "array",
+      "maxItems": 10,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "code", "text", "origin"],
+        "properties": {
+          "id": { "type": "string" },
+          "code": { "enum": ["EVAC_CENTER", "HOTLINE", "ZONE", "OTHER"] },
+          "text": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["en", "tl", "ceb"],
+            "properties": {
+              "en": { "type": "string", "minLength": 1 },
+              "tl": { "type": "string", "minLength": 1 },
+              "ceb": { "type": "string", "minLength": 1 }
+            }
+          },
+          "origin": { "enum": ["fastpath", "llm"] }
+        }
+      },
+      "description": "Red flags for critical details omitted from the source; empty array when nothing is missing (FR-004, SC-002)."
+    },
+    "model_notice": {
+      "type": ["string", "null"],
+      "description": "Set when status=failed or translation copy-detection warned; shown to the user (FR-014)."
+    }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "status": { "const": "skeleton" } } },
+      "then": {
+        "description": "Skeleton stage: fields present but sourced from fast-path templates/extraction; enrichment later replaces text in place while preserving ids and user checklist state."
+      }
+    }
+  ]
+}

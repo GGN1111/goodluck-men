@@ -1,0 +1,250 @@
+{
+  "corpus_version": "1.0",
+  "description": "Golden corpus for SignalReady Pocket contract/corpus tests (tasks T014, T028, T029). 22 advisories covering floods, fires, blackouts, security, rumors, jargon, non-emergency, empty, unsupported-language, long forwards, and screenshot-noise input. Consumed by apps/mobile/test/corpus/*.",
+  "cases": [
+    {
+      "id": "flood-01-marikina-alarm2",
+      "source_type": "text",
+      "text": "PAUNAWA MULA SA BARANGAY TUMANA: Umabot sa Alarm 2 ang Marikina River sa 16.5m alas 4:30 ng hapon. Kailangan nang lumikas ang mga nasa Zone 4 at mabababang lugar. Mag-ingat po tayo.",
+      "expected": {
+        "no_emergency": false,
+        "crisis_type": "FLOOD",
+        "bantay_state": "ALERT",
+        "required_warning_codes": ["EVAC_CENTER", "HOTLINE"],
+        "location_contains": "Zone 4"
+      }
+    },
+    {
+      "id": "flood-02-evac-complete",
+      "source_type": "text",
+      "text": "FLASH FLOOD ADVISORY - Barangay Concepcion. Mandatory evacuation ngayon para sa Zone 1 at Zone 2 dahil sa mabilis na pagtaas ng ilog. Pumunta sa Concepcion Elementary School evacuation center. Hotline ng Barangay DRRMO: 0917-123-4567. Ipadala ang mga matatanda at bata muna.",
+      "expected": {
+        "no_emergency": false,
+        "crisis_type": "FLOOD",
+        "bantay_state": "ALERT",
+        "required_warning_codes": [],
+        "location_contains": "Zone 1"
+      }
+    },
+    {
+      "id": "flood-03-rising-no-zone",
+      "source_type": "text",
+      "text": "Umaabot na sa 12.1 meters ang antas ng tubig sa ilog, bahagyang tumaas mula kagabi. Wala pang iniaanunsyong evacuation pero manatiling alerto ang lahat.",
+      "expected": {
+        "no_emergency": false,
+        "crisis_type": "FLOOD",
+        "bantay_state": "CAUTION",
+        "required_warning_codes": ["ZONE"]
+      }
+    },
+    {
+      "id": "flood-04-cebuano",
+      "source_type": "text",
+      "text": "BABALA: Misubay ang suba sa kadali. Nahaum na ang tubig sa barangay nato ug nagdali ang pagkupos niini. Palihog likayi ang ubos nga bahin sa barangay.",
+      "expected": {
+        "no_emergency": false,
+        "crisis_type": "FLOOD",
+        "bantay_state": "ALERT",
+        "required_warning_codes": ["EVAC_CENTER", "HOTLINE", "ZONE"]
+      }
+    },
+    {
+      "id": "flood-05-evac-order-complete",
+      "source_type": "text",
+      "text": "EVACUATION ORDER: Zone 3, Barangay Marikina. Dahil sa pag-ubo ng Ipo Dam, kailangang lumikas agad. Evacuation center: Marikina Sports Complex. Barangay hotline 8-555-1234. Deadlines: within 30 minutes.",
+      "expected": {
+        "no_emergency": false,
+        "crisis_type": "FLOOD",
+        "bantay_state": "ALERT",
+        "required_warning_codes": [],
+        "location_contains": "Zone 3"
+      }
+    },
+    {
+      "id": "fire-01-market-active",
+      "source_type": "text",
+      "text": "APOY! May sunog sa Bagsakan Center sa Cubao, kumakalat na alas 2:10 ng hapon. Nagtutulungan na ang mga bumbero. Iwasan ang lugar at huwag mag-video sa kalsada.",
+      "expected": {
+        "no_emergency": false,
+        "crisis_type": "FIRE",
+        "bantay_state": "ALERT",
+        "required_warning_codes": ["ZONE", "HOTLINE"]
+      }
+    },
+    {
+      "id": "fire-02-controlled",
+      "source_type": "text",
+      "text": "UPDATE: Kontrolado na ang sunog sa bahay sa Matalino Street alas 5:00 PM. Walang nasaktan. Normal na ang daloy ng trapiko sa lugar.",
+      "expected": {
+        "no_emergency": false,
+        "crisis_type": "FIRE",
+        "bantay_state": "INFO",
+        "required_warning_codes": []
+      }
+    },
+    {
+      "id": "fire-03-fatal",
+      "source_type": "text",
+      "text": "Malakas na sunog sa isang bahay sa Zone 7, Tumana. May iniulat na nasawi ayon sa mga kapitbahay. Iwasan ang lugar, buksan ang mga bintana dahil may usok.",
+      "expected": {
+        "no_emergency": false,
+        "crisis_type": "FIRE",
+        "bantay_state": "ALERT",
+        "required_warning_codes": ["ZONE", "HOTLINE"],
+        "location_contains": "Zone 7"
+      }
+    },
+    {
+      "id": "blackout-01-scheduled",
+      "source_type": "text",
+      "text": "Meralco: Scheduled preventive outage sa Barangay San Isidro mula 9:00 AM hanggang 3:00 PM ngayong Miyerkules dahil sa linya maintenance. Play sa mga apartment ang mga sapat na ilaw at tsarger.",
+      "expected": {
+        "no_emergency": false,
+        "crisis_type": "BLACKOUT",
+        "bantay_state": "INFO",
+        "required_warning_codes": []
+      }
+    },
+    {
+      "id": "blackout-02-unscheduled-no-eta",
+      "source_type": "text",
+      "text": "Nawalan po ng kuryente sa buong Barangay mula alas 8 ng gabi. Wala pang inanunsyong oras ng pagbabalik ng supply. Inaayos daw po ng linya.",
+      "expected": {
+        "no_emergency": false,
+        "crisis_type": "BLACKOUT",
+        "bantay_state": "CAUTION",
+        "required_warning_codes": ["HOTLINE"]
+      }
+    },
+    {
+      "id": "blackout-03-feeder-jargon",
+      "source_type": "text",
+      "text": "Feeder 4 trip. Matic cut-off Zone 2-5. Crew dispatched.",
+      "expected": {
+        "no_emergency": false,
+        "crisis_type": "BLACKOUT",
+        "bantay_state": "CAUTION",
+        "required_warning_codes": ["HOTLINE", "OTHER"]
+      }
+    },
+    {
+      "id": "security-01-campus-lockdown",
+      "source_type": "text",
+      "text": "CAMPUS LOCKDOWN: May armadong tao na na-report malapit sa Gate 3. Manatili sa loob ng silid-aralan, huwag lumabas. Ipagbigay-alam sa campus security sa numero sa emergency bulletin.",
+      "expected": {
+        "no_emergency": false,
+        "crisis_type": "SECURITY",
+        "bantay_state": "ALERT",
+        "required_warning_codes": ["ZONE", "HOTLINE"]
+      }
+    },
+    {
+      "id": "security-02-rumor",
+      "source_type": "text",
+      "text": "Naku po, balita raw may nagnanakaw daw sa mga bahay dito sa streets natin gabi-gabi. Hindi pa confirmed kung totoo, sabi lang ng kapitbahay namin.",
+      "expected": {
+        "no_emergency": false,
+        "crisis_type": "SECURITY",
+        "bantay_state": "CAUTION",
+        "required_warning_codes": ["ZONE"]
+      }
+    },
+    {
+      "id": "security-03-robbery-with-hotline",
+      "source_type": "text",
+      "text": "Robbery hold-up reported sa tindahan sa kanto ng Sampaguita kaninang 7 PM. May tumakbong dalawang lalaki na nakasakay sa motorsiklo. Tawag kayo agad sa police hotline 911 o barangay 0918-555-2222.",
+      "expected": {
+        "no_emergency": false,
+        "crisis_type": "SECURITY",
+        "bantay_state": "CAUTION",
+        "required_warning_codes": ["ZONE"]
+      }
+    },
+    {
+      "id": "general-01-landslide-no-location",
+      "source_type": "text",
+      "text": "May naitalang landslide sa mga delikadong lugar matapos ang malakas na ulan. Mag-ingat sa mga mountain roads.",
+      "expected": {
+        "no_emergency": false,
+        "crisis_type": "GENERAL",
+        "bantay_state": "CAUTION",
+        "required_warning_codes": ["ZONE", "HOTLINE"]
+      }
+    },
+    {
+      "id": "general-02-relief-goods",
+      "source_type": "text",
+      "text": "Paghatid ng relief goods bukas alas 10:00 ng umaga sa covered court. Ang mga benepisyaryo ay ang mga naka-lista sa household masterlist. Dalhin ang ID.",
+      "expected": {
+        "no_emergency": false,
+        "crisis_type": "GENERAL",
+        "bantay_state": "INFO",
+        "required_warning_codes": ["HOTLINE"]
+      }
+    },
+    {
+      "id": "jargon-01-feeder-river",
+      "source_type": "text",
+      "text": "Feeder 4 trip. Marikina 16.5m. Alarm 2. Zone 4 affected.",
+      "expected": {
+        "no_emergency": false,
+        "crisis_type": "FLOOD",
+        "bantay_state": "ALERT",
+        "required_warning_codes": ["EVAC_CENTER", "HOTLINE"],
+        "location_contains": "Zone 4"
+      }
+    },
+    {
+      "id": "mixed-01-fb-screenshot-noise",
+      "source_type": "ocr",
+      "text": "PNAGBABAWAL ANG MGA FAKE NEWS! 🦅\nOfficial Notice: Bumaha na sa Zone 2 dahil sa pagragasa ng ilog kaninang hapon. Ilikas ang pamilya sa pinakamalapit na elevated area. Walang nakalagay na evacuation center sa post na ito.",
+      "expected": {
+        "no_emergency": false,
+        "crisis_type": "FLOOD",
+        "bantay_state": "ALERT",
+        "required_warning_codes": ["EVAC_CENTER", "HOTLINE"],
+        "location_contains": "Zone 2"
+      }
+    },
+    {
+      "id": "long-01-gc-forward",
+      "source_type": "text",
+      "text": "Mga Kabarangay, magandang gabi po. Ito po ang pinakabagong ulat mula sa Barangay Operations Center. Base sa pinakahuling pagsusuri ng ating mga kabarangay na nakadeploy sa mga dike, unti-unti nang tumataas ang antas ng tubig sa mga mabababang lugar ng ating barangay, partikular na sa mga bahay na malapit sa estero at sa mga area na binabaha tuwing malakas ang ulan. Ang mga pamilyang nasa Zone 4 at Zone 5 ay inaabisuang ihanda na ang kanilang mga importante at mahahalagang gamit, mga dokumento, gamot, at tubig. Ang mga renewable resource tulad ng radio ay i-charge na habang may kuryente pa. Ang mga feeder line sa kuryente ay maaaring i-cut anumang oras kapag tumaas pa ang tubig kaya't siguraduhing nakapatay na ang mga appliance. May mga ulat rin na may mga debris na tumataas sa kalsada kaya't iwasan po muna ang paglabas ng walang sapin na paa. Para sa karagdagang impormasyon, maghintay na lamang ng opisyal na anunsyo sa aming grupo. Mangyaring huwag magpalaganap ng hindi opisyal na impormasyon.",
+      "expected": {
+        "no_emergency": false,
+        "crisis_type": "FLOOD",
+        "bantay_state": "CAUTION",
+        "required_warning_codes": ["EVAC_CENTER", "HOTLINE"]
+      }
+    },
+    {
+      "id": "nongov-01-unverified-forward",
+      "source_type": "text",
+      "text": "Forwarded many times: Magtataas daw ang dam kagabi kaya evacuation na raw buong barangay. Sabi ng kumpare ko. Hindi pa raw confirmed ng barangay.",
+      "expected": {
+        "no_emergency": false,
+        "crisis_type": "FLOOD",
+        "bantay_state": "CAUTION",
+        "required_warning_codes": ["EVAC_CENTER", "HOTLINE", "ZONE"]
+      }
+    },
+    {
+      "id": "nonemergency-01-grocery",
+      "source_type": "text",
+      "text": "Suki, may bigas ba kayong 5 kilo? Pakibilis naman, mamaya na lang ako babayaran, promise.",
+      "expected": { "no_emergency": true }
+    },
+    {
+      "id": "nonemergency-02-empty",
+      "source_type": "text",
+      "text": "",
+      "expected": { "no_emergency": true }
+    },
+    {
+      "id": "unsupported-01-foreign-language",
+      "source_type": "text",
+      "text": "緊急地震速報：海岸域で津波の可能性があります。すぐ避難してください。",
+      "expected": { "no_emergency": true, "note": "Fast-path finds no PH-language keywords; system must explain it cannot analyze rather than fabricate (spec edge case)." }
+    }
+  ]
+}
