@@ -55,10 +55,13 @@ REQUIRED JSON SCHEMA (fixed key order):
 ''';
 
 /// Low temperature for factual fidelity (research R3).
+/// maxTokens capped at 256: the freeform schema fits well under this, and a
+/// lower cap avoids the model rambling to the old 768 limit when it does not
+/// emit a clean stop (grammar is disabled).
 const SamplingConfig kDefaultSampling = SamplingConfig(
   temperature: 0.3,
   topP: 0.9,
-  maxTokens: 768,
+  maxTokens: 256,
 );
 
 /// Cap for the R4 fallback lever (0.5B model, ≤120-token outputs).

@@ -253,21 +253,18 @@ class LlamaCppEngine implements InferenceEngine {
     }
 
     try {
-      // 2) Grammar-constrained sampler chain (GBNF + temp + top_p + dist).
-      final gStr = grammarText.toNativeUtf8();
-      final gRoot = 'root'.toNativeUtf8();
+      // 2) Sampler chain (temp + top_p + dist). Grammar is disabled: the
+      //    native GBNF sampler aborts the process (SIGABRT) on certain
+      //    tokens. The model generates freeform JSON and the Dart pipeline
+      //    falls back to skeleton results when it is malformed.
       int rc;
-      try {
-        rc = shim.setup(engine, gStr, gRoot, request.sampling.seed ?? -1,
-            request.sampling.temperature, request.sampling.topP);
-      } finally {
-        calloc.free(gStr);
-        calloc.free(gRoot);
-      }
+      rc = shim.setup(engine, Pointer.fromAddress(0), Pointer.fromAddress(0),
+          request.sampling.seed ?? -1, request.sampling.temperature,
+          request.sampling.topP);
       debugPrint('llm: sr_setup rc=$rc');
       if (rc != 0) {
         yield const FailedEvent(
-            'grammar_violation', 'Grammar failed to compile.');
+            'grammar_violation', 'Sampler setup failed.');
         return;
       }
 
@@ -292,6 +289,13 @@ class LlamaCppEngine implements InferenceEngine {
       final outBuf = calloc<Uint8>(outCap);
       final rawBytes = <int>[];
       var steps = 0;
+      // Early-stop: end generation once the top-level JSON object closes.
+      // Grammar is disabled, so without this the model rambles to the token
+      // cap. Tracks brace depth, ignoring braces inside strings/escapes.
+      var depth = 0;
+      var sawOpen = false;
+      var inString = false;
+      var escaped = false;
       try {
         while (steps < request.sampling.maxTokens) {
           steps++;
@@ -313,6 +317,27 @@ class LlamaCppEngine implements InferenceEngine {
           final piece = outBuf.asTypedList(n);
           rawBytes.addAll(piece);
           yield TokenEvent(utf8.decode(piece, allowMalformed: true));
+
+          for (final b in piece) {
+            if (inString) {
+              if (escaped) {
+                escaped = false;
+              } else if (b == 0x5C) {
+                escaped = true; // backslash
+              } else if (b == 0x22) {
+                inString = false; // closing quote
+              }
+            } else if (b == 0x22) {
+              inString = true; // opening quote
+            } else if (b == 0x7B) {
+              depth++; // {
+              sawOpen = true;
+            } else if (b == 0x7D) {
+              depth--; // }
+            }
+          }
+          if (sawOpen && depth <= 0) break; // top-level object closed
+
           if (steps % 8 == 0) {
             yield ProgressEvent(
                 tokensGenerated: steps,
