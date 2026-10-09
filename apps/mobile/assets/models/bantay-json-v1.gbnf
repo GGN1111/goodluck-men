@@ -56,4 +56,8 @@ int     ::= [1-9] [0-9]*
 string  ::= "\"" char* "\""
 char    ::= [^"\\] | escape
 escape  ::= "\\" ["\\/bfnrt] | "\\u" [0-9a-fA-F] [0-9a-fA-F] [0-9a-fA-F] [0-9a-fA-F]
-ws      ::= [ \t\n\r]*
+# ws mirrors llama.cpp's reference json.gbnf: an empty-first alternation of
+# literals. A bare "[ \t\n\r]*" star crashes llama_grammar_accept_token with
+# "Unexpected empty grammar stack" (the empty alternate collapses the
+# non-empty branch during advance_stack).
+ws      ::= | " " | "\t" | "\n" | "\r"

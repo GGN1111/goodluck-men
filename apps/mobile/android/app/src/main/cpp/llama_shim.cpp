@@ -184,6 +184,21 @@ int32_t sr_sample(SrEngine* e, char* out, int32_t out_cap) {
   if (!e || !e->ctx || !e->chain || !out || out_cap <= 0) return -1;
 
   const llama_token token = llama_sampler_sample(e->chain, e->ctx, -1);
+
+  // Log the piece BEFORE accept so a grammar abort shows the full token
+  // sequence that led to it (accept throws on empty stack -> SIGABRT).
+  {
+    char pd[512];
+    int32_t pn = llama_token_to_piece(e->vocab, token, pd, (int)sizeof(pd), 0, false);
+    if (pn < 0) pn = 0;
+    if (pn >= (int)sizeof(pd)) pn = (int)sizeof(pd) - 1;
+    pd[pn] = 0;
+    for (int32_t i = 0; i < pn; i++) {
+      if (pd[i] == '\n') { pd[i] = '\\'; if (i + 1 < (int)sizeof(pd) - 1) { pd[i+1] = 'n'; } }
+    }
+    __android_log_print(ANDROID_LOG_INFO, "llama", "sr_sample tok=%d piece='%s'", token, pd);
+  }
+
   llama_sampler_accept(e->chain, token);
 
   if (e->eos >= 0 && token == e->eos) return 0;  // EOS -> caller stops
